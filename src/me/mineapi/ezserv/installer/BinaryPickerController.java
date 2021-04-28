@@ -25,10 +25,7 @@ import me.mineapi.ezserv.downloader.VanillaVersion;
 import me.mineapi.ezserv.panel.PanelController;
 
 import java.awt.print.Paper;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
@@ -102,7 +99,7 @@ public class BinaryPickerController implements Initializable {
         try {
             Gson gson = new Gson();
 
-            Reader reader = new BufferedReader(new FileReader(Downloader.class.getResource("spigot.json").getFile()));
+            Reader reader = new BufferedReader(new InputStreamReader(new URL("https://raw.githubusercontent.com/mineapi/EZServ/master/src/me/mineapi/ezserv/downloader/spigot.json").openStream()));
 
             SpigotVersion[] spigotVersions = gson.fromJson(reader, SpigotVersion[].class);
 
@@ -124,7 +121,7 @@ public class BinaryPickerController implements Initializable {
         try {
             Gson gson = new Gson();
 
-            Reader reader = new BufferedReader(new FileReader(Downloader.class.getResource("vanilla.json").getFile()));
+            Reader reader = new BufferedReader(new InputStreamReader(new URL("https://raw.githubusercontent.com/mineapi/EZServ/master/src/me/mineapi/ezserv/downloader/vanilla.json").openStream()));
 
             VanillaVersion[] vanillaVersions = gson.fromJson(reader, VanillaVersion[].class);
 
@@ -146,7 +143,7 @@ public class BinaryPickerController implements Initializable {
         try {
             Gson gson = new Gson();
 
-            Reader reader = new BufferedReader(new FileReader(Downloader.class.getResource("paper.json").getFile()));
+            Reader reader = new BufferedReader(new InputStreamReader(new URL("https://raw.githubusercontent.com/mineapi/EZServ/master/src/me/mineapi/ezserv/downloader/paper.json").openStream()));
 
             PaperVersion[] paperVersions = gson.fromJson(reader, PaperVersion[].class);
 

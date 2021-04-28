@@ -1,5 +1,6 @@
 package me.mineapi.ezserv.panel;
 
+import com.google.gson.Gson;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -22,6 +23,7 @@ import me.mineapi.ezserv.utils.ServerProperty;
 
 
 import java.io.*;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 
@@ -339,10 +341,6 @@ public class PanelController implements Initializable {
             }
 
             properties.setItems(propertyList);
-
-            for (String s : lines) {
-                System.out.println(s);
-            }
         } catch (FileNotFoundException f) {
             f.printStackTrace();
         } catch (IOException e) {
@@ -403,5 +401,15 @@ public class PanelController implements Initializable {
         } catch (IOException e) {
             displayError(e);
         }
+    }
+
+    public String getUUIDfromAPI(String userName) throws Exception {
+        Gson gson = new Gson();
+
+        Reader reader = new BufferedReader(new InputStreamReader(new URL("https://api.mojang.com/users/profiles/minecraft/" + userName).openStream()));
+
+        WhitelistPlayer player = gson.fromJson(reader, WhitelistPlayer.class);
+
+        return player.getUuid();
     }
 }

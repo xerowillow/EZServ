@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Text?>
 
-<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.mineapi.ezserv.panel.PanelController">
+<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="me.mineapi.ezserv.panel.PanelController">
    <children>
       <TabPane prefHeight="400.0" prefWidth="600.0" tabClosingPolicy="UNAVAILABLE">
         <tabs>
@@ -23,6 +30,17 @@
                      </children>
                   </AnchorPane>
                </content>
+            </Tab>
+            <Tab text="EZSettings">
+              <content>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                     <children>
+                        <Slider layoutX="377.0" layoutY="61.0" max="65536.0" />
+                        <Text layoutX="397.0" layoutY="46.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Memory Allocation" />
+                        <Text layoutX="436.0" layoutY="95.0" strokeType="OUTSIDE" strokeWidth="0.0" text="0 MB" />
+                     </children>
+                  </AnchorPane>
+              </content>
             </Tab>
           <Tab fx:id="serverPropertiesTab" text="Server Properties">
                <content>
