@@ -1,6 +1,7 @@
 package me.mineapi.ezserv.installer;
 
 import com.google.gson.Gson;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -29,6 +30,8 @@ import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class BinaryPickerController implements Initializable {
     @FXML Button spigotButton;
@@ -46,7 +49,6 @@ public class BinaryPickerController implements Initializable {
     Button pickedButton;
 
     ObservableList<String> versions = FXCollections.observableArrayList();
-
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -71,28 +73,70 @@ public class BinaryPickerController implements Initializable {
     }
 
     public void onInstall(ActionEvent event) {
-        try {
             if (pickedButton == spigotButton) {
                 Downloader.downloadSpigot(versionPicker.getValue());
-                hide();
-                PanelController.show();
+
+                Timer timer = new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        Platform.runLater(() -> {
+                            if (Downloader.downloaderStatus == Downloader.Status.IDLE) {
+                                try {
+                                    hide();
+                                    PanelController.show();
+                                    this.cancel();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                    System.exit(1);
+                                }
+                            }
+                        });
+                    }
+                }, 1L, 1000L);
             } else if (pickedButton == vanillaButton) {
                 Downloader.downloadVanilla(versionPicker.getValue());
-                hide();
-                PanelController.show();
+
+                Timer timer = new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        Platform.runLater(() -> {
+                            if (Downloader.downloaderStatus == Downloader.Status.IDLE) {
+                                try {
+                                    hide();
+                                    PanelController.show();
+                                    this.cancel();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                    System.exit(1);
+                                }
+                            }
+                        });
+                    }
+                }, 1L, 1000L);
             } else if (pickedButton == paperButton) {
                 Downloader.downloadPaper(versionPicker.getValue());
-                hide();
-                PanelController.show();
+
+                Timer timer = new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        Platform.runLater(() -> {
+                            if (Downloader.downloaderStatus == Downloader.Status.IDLE) {
+                                try {
+                                    hide();
+                                    PanelController.show();
+                                    this.cancel();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                    System.exit(1);
+                                }
+                            }
+                        });
+                    }
+                }, 1L, 1000L);
             }
-        } catch (Exception e) {
-            Alert fatalError = new Alert(Alert.AlertType.ERROR);
-            fatalError.setHeaderText("The application encountered a fatal error!");
-            fatalError.setContentText(e.getMessage());
-            fatalError.showAndWait();
-            e.printStackTrace();
-            System.exit(1);
-        }
     }
 
     public void spigotPicked(ActionEvent event) {

@@ -1,6 +1,7 @@
 package me.mineapi.ezserv.panel;
 
 import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -22,6 +23,10 @@ import me.mineapi.ezserv.utils.Console;
 import me.mineapi.ezserv.utils.ServerProperty;
 
 
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonBuilderFactory;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -32,9 +37,12 @@ public class PanelController implements Initializable {
     @FXML Button stop;
     @FXML Button reload;
     @FXML TextArea consoleArea;
+    @FXML TextArea whitelistedPlayers;
     @FXML TextField consoleInput;
+    @FXML TextField whitelistPlayerInput;
     @FXML Button consoleSubmit;
     @FXML Button saveProperties;
+    @FXML Button whitelistPlayerSubmit;
     @FXML Text statusText;
     @FXML TableView properties;
     @FXML TableColumn colProperty;
@@ -157,8 +165,23 @@ public class PanelController implements Initializable {
         }
     }
 
+    public void onWhitelist(ActionEvent event) {
+        whitelistPlayer();
+    }
+
+    public void onWhitelistKey(KeyEvent event) {
+        if (event.getCode().equals(KeyCode.ENTER)) {
+            whitelistPlayer();
+        }
+    }
+
     void startServer() throws IOException {
         File eula = new File(Main.loadServer().getAbsoluteFile().getParent() + "/eula.txt");
+        try {
+            getUUIDfromAPI("MineAPI");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         if (eula.createNewFile()) {
             PrintStream writer = new PrintStream(eula);
             writer.println("#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://account.mojang.com/documents/minecraft_eula).");
@@ -410,6 +433,78 @@ public class PanelController implements Initializable {
 
         WhitelistPlayer player = gson.fromJson(reader, WhitelistPlayer.class);
 
-        return player.getUuid();
+        System.out.println(player);
+
+        return player.getId();
+    }
+
+    void whitelistPlayer() {
+        try {
+            File whitelistJson = new File("./server/whitelist.json");
+
+            Gson gson = new Gson();
+
+            Reader reader = new BufferedReader(new FileReader(whitelistJson));
+
+            WhitelistedPlayer[] whitelistPlayers = gson.fromJson(reader, WhitelistedPlayer[].class);
+
+            FileWriter fw = new FileWriter(whitelistJson);
+            PrintWriter pw = new PrintWriter(whitelistJson);
+            pw.flush();
+            pw.close();
+            fw.close();
+
+            Map<String, String> config = new HashMap<String, String>();
+            config.put("javax.json.stream.JsonGenerator.prettyPrinting", "javax.json.stream.JsonGenerator.prettyPrinting");
+            JsonBuilderFactory factory = Json.createBuilderFactory(config);
+            JsonArrayBuilder array = factory.createArrayBuilder();
+
+            if (whitelistPlayers != null) {
+                for (WhitelistedPlayer whitelistPlayer : whitelistPlayers) {
+                    array.add(factory.createObjectBuilder().add("uuid", whitelistPlayer.getUuid()).add("name", whitelistPlayer.getName()).build());
+                }
+            }
+
+            if (getUUIDfromAPI(whitelistPlayerInput.getText()) != null) {
+                array.add(factory.createObjectBuilder().add("uuid", getUUIDfromAPI(whitelistPlayerInput.getText())).add("name", whitelistPlayerInput.getText()).build());
+            }
+
+            JsonArray finishedArray = array.build();
+            System.out.println(finishedArray.toString());
+            PrintStream ps = new PrintStream(whitelistJson);
+            ps.print(finishedArray.toString());
+
+            whitelistPlayerInput.setText("");
+
+            updateWhitelistArea();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    void updateWhitelistArea() {
+        File file = new File("./server/whitelist.json");
+
+        try {
+            if (file.exists()) {
+                Gson gson = new Gson();
+
+                Reader reader = new BufferedReader(new FileReader(file));
+
+                WhitelistedPlayer[] whitelistedPlayersList = gson.fromJson(reader, WhitelistedPlayer[].class);
+
+                StringBuilder stringBuilder = new StringBuilder();
+
+                if (whitelistedPlayersList != null) {
+                    for (WhitelistedPlayer p : whitelistedPlayersList) {
+                        stringBuilder.append(p.getName()).append(System.getProperty("line.separator"));
+                    }
+                }
+
+                whitelistedPlayers.setText(stringBuilder.toString());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

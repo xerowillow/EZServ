@@ -3,11 +3,11 @@ package me.mineapi.ezserv.panel;
 public class WhitelistPlayer {
 
     private String name;
-    private String uuid;
+    private String id;
 
-    public WhitelistPlayer(String name, String uuid) {
+    public WhitelistPlayer(String id, String name) {
         this.name = name;
-        this.uuid = uuid;
+        this.id = id;
     }
 
     public String getName() {
@@ -18,11 +18,16 @@ public class WhitelistPlayer {
         this.name = name;
     }
 
-    public String getUuid() {
-        return uuid;
+    public String getId() {
+        return id;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    @Override
+    public String toString() {
+        return "Player " + getName() + ", UUID: " + getId();
     }
 }

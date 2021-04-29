@@ -10,5 +10,6 @@
     <orderEntry type="library" name="apache-commons" level="project" />
     <orderEntry type="library" name="gson-2.8.6" level="project" />
     <orderEntry type="library" name="gson-2.8.6-javadoc" level="project" />
+    <orderEntry type="library" name="javax.json-1.1.4-javadoc" level="project" />
   </component>
 </module>

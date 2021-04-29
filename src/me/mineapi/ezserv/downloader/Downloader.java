@@ -14,9 +14,16 @@ import java.nio.file.StandardCopyOption;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class Downloader {
+    public enum Status { DOWNLOADING, IDLE }
+
+    public static Status downloaderStatus = Status.IDLE;
+
     public static void downloadSpigot(String version) {
+        final boolean[] finishedDownloading = {false};
         Thread downloadThread = new Thread(){
             @Override
             public void run() {
@@ -64,6 +71,8 @@ public class Downloader {
                                 while ((bytesRead = bufferedInputStream.read(dataBuffer, 0, 1024)) != -1) {
                                     fileOutputStream.write(dataBuffer, 0, bytesRead);
                                 }
+
+                                finishedDownloading[0] = true;
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -74,19 +83,29 @@ public class Downloader {
                 }
 
                 while (this.isAlive()) {
-                    File f = Main.loadServer();
-
-                    if (f.exists()) {
+                    if (finishedDownloading[0]) {
                         this.interrupt();
-                        return;
                     }
                 }
             }
         };
         downloadThread.start();
+
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (downloadThread.isInterrupted()) {
+                    Downloader.downloaderStatus = Status.IDLE;
+                } else {
+                    Downloader.downloaderStatus = Status.DOWNLOADING;
+                }
+            }
+        }, 1L, 1000L);
     }
 
     public static void downloadVanilla(String version) {
+        final boolean[] finishedDownloading = {false};
         Thread downloadThread = new Thread(){
             public void run() {
                 try {
@@ -133,6 +152,8 @@ public class Downloader {
                                 while ((bytesRead = bufferedInputStream.read(dataBuffer, 0, 1024)) != -1) {
                                     fileOutputStream.write(dataBuffer, 0, bytesRead);
                                 }
+
+                                finishedDownloading[0] = true;
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -143,19 +164,29 @@ public class Downloader {
                 }
 
                 while (this.isAlive()) {
-                    File f = Main.loadServer();
-
-                    if (f.exists()) {
+                    if (finishedDownloading[0]) {
                         this.interrupt();
-                        return;
                     }
                 }
             }
         };
         downloadThread.start();
+
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (downloadThread.isInterrupted()) {
+                    Downloader.downloaderStatus = Status.IDLE;
+                } else {
+                    Downloader.downloaderStatus = Status.DOWNLOADING;
+                }
+            }
+        }, 1L, 1000L);
     }
 
     public static void downloadPaper(String version) {
+        final boolean[] finishedDownloading = {false};
         Thread downloadThread = new Thread(){
             @Override
             public void run() {
@@ -203,6 +234,8 @@ public class Downloader {
                                 while ((bytesRead = bufferedInputStream.read(dataBuffer, 0, 1024)) != -1) {
                                     fileOutputStream.write(dataBuffer, 0, bytesRead);
                                 }
+
+                                finishedDownloading[0] = true;
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -213,15 +246,24 @@ public class Downloader {
                 }
 
                 while (this.isAlive()) {
-                    File f = Main.loadServer();
-
-                    if (f.exists()) {
+                    if (finishedDownloading[0]) {
                         this.interrupt();
-                        return;
                     }
                 }
             }
         };
         downloadThread.start();
+
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (downloadThread.isInterrupted()) {
+                    Downloader.downloaderStatus = Status.IDLE;
+                } else {
+                    Downloader.downloaderStatus = Status.DOWNLOADING;
+                }
+            }
+        }, 1L, 1000L);
     }
 }
