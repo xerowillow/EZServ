@@ -6,6 +6,7 @@ import me.mineapi.ezserv.downloader.Downloader;
 import me.mineapi.ezserv.installer.BinaryPickerController;
 import me.mineapi.ezserv.panel.PanelController;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -14,6 +15,11 @@ import java.util.ResourceBundle;
 public class LoadController implements Initializable { //This class's sole purpose is to redirect the user to it's respective window.
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        File dir = new File(Main.loadServer().getParent());
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+
         if (Main.loadServer().getAbsoluteFile().exists()) {
             //Redirect user to the panel.
             try {

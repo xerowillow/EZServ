@@ -14,170 +14,256 @@ import java.nio.file.StandardCopyOption;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class Downloader {
+    public enum Status { DOWNLOADING, IDLE }
+
+    public static Status downloaderStatus = Status.IDLE;
+
     public static void downloadSpigot(String version) {
-        try {
-            Gson gson = new Gson();
+        final boolean[] finishedDownloading = {false};
+        Thread downloadThread = new Thread(){
+            @Override
+            public void run() {
+                try {
+                    Gson gson = new Gson();
 
-            Reader reader = new BufferedReader(new FileReader(Downloader.class.getResource("spigot.json").getFile()));
+                    Reader reader = new BufferedReader(new InputStreamReader(new URL("https://raw.githubusercontent.com/mineapi/EZServ/master/src/me/mineapi/ezserv/downloader/spigot.json").openStream()));
 
-            SpigotVersion[] spigotVersions = gson.fromJson(reader, SpigotVersion[].class);
+                    SpigotVersion[] spigotVersions = gson.fromJson(reader, SpigotVersion[].class);
 
-            for (SpigotVersion spigotVer : spigotVersions) {
-                if (spigotVer.version.equals(version)) {
+                    for (SpigotVersion spigotVer : spigotVersions) {
+                        if (spigotVer.version.equals(version)) {
                     /*
                     Thanks Dash1e on StackOverflow!
                      */
 
-                    TrustManager[] trustAllCerts = new TrustManager[]{
-                            new X509TrustManager() {
-                                @Override
-                                public X509Certificate[] getAcceptedIssuers() {
-                                    return null;
+                            TrustManager[] trustAllCerts = new TrustManager[]{
+                                    new X509TrustManager() {
+                                        @Override
+                                        public X509Certificate[] getAcceptedIssuers() {
+                                            return null;
+                                        }
+
+                                        @Override
+                                        public void checkClientTrusted(X509Certificate[] certs, String authType) { }
+
+                                        @Override
+                                        public void checkServerTrusted(X509Certificate[] certs, String authType) { }
+                                    }
+                            };
+
+                            try {
+                                SSLContext sc = SSLContext.getInstance("SSL");
+                                sc.init(null, trustAllCerts, new SecureRandom());
+                                HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                            try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new URL(spigotVer.getUrl()).openStream());
+                                 FileOutputStream fileOutputStream = new FileOutputStream("./server/server.jar")) {
+                                byte dataBuffer[] = new byte[1024];
+                                int bytesRead;
+
+                                while ((bytesRead = bufferedInputStream.read(dataBuffer, 0, 1024)) != -1) {
+                                    fileOutputStream.write(dataBuffer, 0, bytesRead);
                                 }
 
-                                @Override
-                                public void checkClientTrusted(X509Certificate[] certs, String authType) { }
-
-                                @Override
-                                public void checkServerTrusted(X509Certificate[] certs, String authType) { }
+                                finishedDownloading[0] = true;
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
-                    };
-
-                    try {
-                        SSLContext sc = SSLContext.getInstance("SSL");
-                        sc.init(null, trustAllCerts, new SecureRandom());
-                        HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                    try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new URL(spigotVer.getUrl()).openStream());
-                         FileOutputStream fileOutputStream = new FileOutputStream("./server/server.jar")) {
-                            byte dataBuffer[] = new byte[1024];
-                            int bytesRead;
-
-                            while ((bytesRead = bufferedInputStream.read(dataBuffer, 0, 1024)) != -1) {
-                                fileOutputStream.write(dataBuffer, 0, bytesRead);
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                while (this.isAlive()) {
+                    if (finishedDownloading[0]) {
+                        this.interrupt();
                     }
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        };
+        downloadThread.start();
+
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (downloadThread.isInterrupted()) {
+                    Downloader.downloaderStatus = Status.IDLE;
+                } else {
+                    Downloader.downloaderStatus = Status.DOWNLOADING;
+                }
+            }
+        }, 1L, 1000L);
     }
 
     public static void downloadVanilla(String version) {
-        try {
-            Gson gson = new Gson();
+        final boolean[] finishedDownloading = {false};
+        Thread downloadThread = new Thread(){
+            public void run() {
+                try {
+                    Gson gson = new Gson();
 
-            Reader reader = new BufferedReader(new FileReader(Downloader.class.getResource("vanilla.json").getFile()));
+                    Reader reader = new BufferedReader(new InputStreamReader(new URL("https://raw.githubusercontent.com/mineapi/EZServ/master/src/me/mineapi/ezserv/downloader/vanilla.json").openStream()));
 
-            VanillaVersion[] vanillaVersions = gson.fromJson(reader, VanillaVersion[].class);
+                    VanillaVersion[] vanillaVersions = gson.fromJson(reader, VanillaVersion[].class);
 
-            for (VanillaVersion vanillaVer : vanillaVersions) {
-                if (vanillaVer.version.equals(version)) {
+                    for (VanillaVersion vanillaVer : vanillaVersions) {
+                        if (vanillaVer.version.equals(version)) {
                     /*
                     Thanks Dash1e on StackOverflow!
                      */
 
-                    TrustManager[] trustAllCerts = new TrustManager[]{
-                            new X509TrustManager() {
-                                @Override
-                                public X509Certificate[] getAcceptedIssuers() {
-                                    return null;
+                            TrustManager[] trustAllCerts = new TrustManager[]{
+                                    new X509TrustManager() {
+                                        @Override
+                                        public X509Certificate[] getAcceptedIssuers() {
+                                            return null;
+                                        }
+
+                                        @Override
+                                        public void checkClientTrusted(X509Certificate[] certs, String authType) { }
+
+                                        @Override
+                                        public void checkServerTrusted(X509Certificate[] certs, String authType) { }
+                                    }
+                            };
+
+                            try {
+                                SSLContext sc = SSLContext.getInstance("SSL");
+                                sc.init(null, trustAllCerts, new SecureRandom());
+                                HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                            try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new URL(vanillaVer.getUrl()).openStream());
+                                 FileOutputStream fileOutputStream = new FileOutputStream("./server/server.jar")) {
+                                byte dataBuffer[] = new byte[1024];
+                                int bytesRead;
+
+                                while ((bytesRead = bufferedInputStream.read(dataBuffer, 0, 1024)) != -1) {
+                                    fileOutputStream.write(dataBuffer, 0, bytesRead);
                                 }
 
-                                @Override
-                                public void checkClientTrusted(X509Certificate[] certs, String authType) { }
-
-                                @Override
-                                public void checkServerTrusted(X509Certificate[] certs, String authType) { }
+                                finishedDownloading[0] = true;
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
-                    };
-
-                    try {
-                        SSLContext sc = SSLContext.getInstance("SSL");
-                        sc.init(null, trustAllCerts, new SecureRandom());
-                        HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                    try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new URL(vanillaVer.getUrl()).openStream());
-                         FileOutputStream fileOutputStream = new FileOutputStream("./server/server.jar")) {
-                        byte dataBuffer[] = new byte[1024];
-                        int bytesRead;
-
-                        while ((bytesRead = bufferedInputStream.read(dataBuffer, 0, 1024)) != -1) {
-                            fileOutputStream.write(dataBuffer, 0, bytesRead);
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                while (this.isAlive()) {
+                    if (finishedDownloading[0]) {
+                        this.interrupt();
                     }
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        };
+        downloadThread.start();
+
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (downloadThread.isInterrupted()) {
+                    Downloader.downloaderStatus = Status.IDLE;
+                } else {
+                    Downloader.downloaderStatus = Status.DOWNLOADING;
+                }
+            }
+        }, 1L, 1000L);
     }
 
     public static void downloadPaper(String version) {
-        try {
-            Gson gson = new Gson();
+        final boolean[] finishedDownloading = {false};
+        Thread downloadThread = new Thread(){
+            @Override
+            public void run() {
+                try {
+                    Gson gson = new Gson();
 
-            Reader reader = new BufferedReader(new FileReader(Downloader.class.getResource("vanilla.json").getFile()));
+                    Reader reader = new BufferedReader(new InputStreamReader(new URL("https://raw.githubusercontent.com/mineapi/EZServ/master/src/me/mineapi/ezserv/downloader/paper.json").openStream()));
 
-            PaperVersion[] paperVersions = gson.fromJson(reader, PaperVersion[].class);
+                    PaperVersion[] paperVersions = gson.fromJson(reader, PaperVersion[].class);
 
-            for (PaperVersion paperVer : paperVersions) {
-                if (paperVer.version.equals(version)) {
+                    for (PaperVersion paperVer : paperVersions) {
+                        if (paperVer.version.equals(version)) {
                     /*
                     Thanks Dash1e on StackOverflow!
                      */
 
-                    TrustManager[] trustAllCerts = new TrustManager[]{
-                            new X509TrustManager() {
-                                @Override
-                                public X509Certificate[] getAcceptedIssuers() {
-                                    return null;
+                            TrustManager[] trustAllCerts = new TrustManager[]{
+                                    new X509TrustManager() {
+                                        @Override
+                                        public X509Certificate[] getAcceptedIssuers() {
+                                            return null;
+                                        }
+
+                                        @Override
+                                        public void checkClientTrusted(X509Certificate[] certs, String authType) { }
+
+                                        @Override
+                                        public void checkServerTrusted(X509Certificate[] certs, String authType) { }
+                                    }
+                            };
+
+                            try {
+                                SSLContext sc = SSLContext.getInstance("SSL");
+                                sc.init(null, trustAllCerts, new SecureRandom());
+                                HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                            try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new URL(paperVer.getUrl()).openStream());
+                                 FileOutputStream fileOutputStream = new FileOutputStream("./server/server.jar")) {
+                                byte dataBuffer[] = new byte[1024];
+                                int bytesRead;
+
+                                while ((bytesRead = bufferedInputStream.read(dataBuffer, 0, 1024)) != -1) {
+                                    fileOutputStream.write(dataBuffer, 0, bytesRead);
                                 }
 
-                                @Override
-                                public void checkClientTrusted(X509Certificate[] certs, String authType) { }
-
-                                @Override
-                                public void checkServerTrusted(X509Certificate[] certs, String authType) { }
+                                finishedDownloading[0] = true;
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
-                    };
-
-                    try {
-                        SSLContext sc = SSLContext.getInstance("SSL");
-                        sc.init(null, trustAllCerts, new SecureRandom());
-                        HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                    try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new URL(paperVer.getUrl()).openStream());
-                         FileOutputStream fileOutputStream = new FileOutputStream("./server/server.jar")) {
-                        byte dataBuffer[] = new byte[1024];
-                        int bytesRead;
-
-                        while ((bytesRead = bufferedInputStream.read(dataBuffer, 0, 1024)) != -1) {
-                            fileOutputStream.write(dataBuffer, 0, bytesRead);
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                while (this.isAlive()) {
+                    if (finishedDownloading[0]) {
+                        this.interrupt();
                     }
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        };
+        downloadThread.start();
+
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (downloadThread.isInterrupted()) {
+                    Downloader.downloaderStatus = Status.IDLE;
+                } else {
+                    Downloader.downloaderStatus = Status.DOWNLOADING;
+                }
+            }
+        }, 1L, 1000L);
     }
 }

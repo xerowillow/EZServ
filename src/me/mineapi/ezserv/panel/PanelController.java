@@ -1,5 +1,7 @@
 package me.mineapi.ezserv.panel;
 
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -21,7 +23,12 @@ import me.mineapi.ezserv.utils.Console;
 import me.mineapi.ezserv.utils.ServerProperty;
 
 
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonBuilderFactory;
 import java.io.*;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 
@@ -30,9 +37,12 @@ public class PanelController implements Initializable {
     @FXML Button stop;
     @FXML Button reload;
     @FXML TextArea consoleArea;
+    @FXML TextArea whitelistedPlayers;
     @FXML TextField consoleInput;
+    @FXML TextField whitelistPlayerInput;
     @FXML Button consoleSubmit;
     @FXML Button saveProperties;
+    @FXML Button whitelistPlayerSubmit;
     @FXML Text statusText;
     @FXML TableView properties;
     @FXML TableColumn colProperty;
@@ -110,6 +120,8 @@ public class PanelController implements Initializable {
                 }
             }
         }, 0L, 1000L);
+
+        updateWhitelistArea();
     }
 
     public static void show() throws IOException {
@@ -155,8 +167,23 @@ public class PanelController implements Initializable {
         }
     }
 
+    public void onWhitelist(ActionEvent event) {
+        whitelistPlayer();
+    }
+
+    public void onWhitelistKey(KeyEvent event) {
+        if (event.getCode().equals(KeyCode.ENTER)) {
+            whitelistPlayer();
+        }
+    }
+
     void startServer() throws IOException {
         File eula = new File(Main.loadServer().getAbsoluteFile().getParent() + "/eula.txt");
+        try {
+            getUUIDfromAPI("MineAPI");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         if (eula.createNewFile()) {
             PrintStream writer = new PrintStream(eula);
             writer.println("#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://account.mojang.com/documents/minecraft_eula).");
@@ -339,10 +366,6 @@ public class PanelController implements Initializable {
             }
 
             properties.setItems(propertyList);
-
-            for (String s : lines) {
-                System.out.println(s);
-            }
         } catch (FileNotFoundException f) {
             f.printStackTrace();
         } catch (IOException e) {
@@ -402,6 +425,122 @@ public class PanelController implements Initializable {
             }
         } catch (IOException e) {
             displayError(e);
+        }
+    }
+
+    public String getUUIDfromAPI(String userName) throws Exception {
+        Gson gson = new Gson();
+
+        Reader reader = new BufferedReader(new InputStreamReader(new URL("https://api.mojang.com/users/profiles/minecraft/" + userName).openStream()));
+
+        WhitelistPlayer player = gson.fromJson(reader, WhitelistPlayer.class);
+
+        System.out.println(player);
+
+        return player.getId();
+    }
+
+    void whitelistPlayer() {
+        try {
+            if (whitelistPlayerInput.getText() != null) {
+                File whitelistJson = new File("./server/whitelist.json");
+
+                Gson gson = new Gson();
+
+                Reader reader = new BufferedReader(new FileReader(whitelistJson));
+
+                WhitelistedPlayer[] whitelistPlayers = gson.fromJson(reader, WhitelistedPlayer[].class);
+
+                if (whitelistPlayers != null) {
+                    for (WhitelistedPlayer p : whitelistPlayers) {
+                        if (whitelistPlayerInput.getText().equals(p.getName())) {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setHeaderText("Player Invalid");
+                            alert.setTitle("Player Invalid");
+                            alert.setContentText("The player you attempted to whitelist is already whitelisted!");
+                            alert.show();
+                            return;
+                        }
+                    }
+
+                    FileWriter fw = new FileWriter(whitelistJson);
+                    PrintWriter pw = new PrintWriter(whitelistJson);
+                    pw.flush();
+                    pw.close();
+                    fw.close();
+
+                    PrintStream ps1 = new PrintStream(whitelistJson);
+                    ps1.println("[]");
+
+                    Map<String, String> config = new HashMap<String, String>();
+                    config.put("javax.json.stream.JsonGenerator.prettyPrinting", "javax.json.stream.JsonGenerator.prettyPrinting");
+                    JsonBuilderFactory factory = Json.createBuilderFactory(config);
+                    JsonArrayBuilder array = factory.createArrayBuilder();
+
+                    if (whitelistPlayers != null) {
+                        for (WhitelistedPlayer whitelistPlayer : whitelistPlayers) {
+                            array.add(factory.createObjectBuilder().add("uuid", whitelistPlayer.getUuid()).add("name", whitelistPlayer.getName()).build());
+                        }
+                    }
+
+                    try {
+                        if (getUUIDfromAPI(whitelistPlayerInput.getText()) != null) {
+                            array.add(factory.createObjectBuilder().add("uuid", getUUIDfromAPI(whitelistPlayerInput.getText())).add("name", whitelistPlayerInput.getText()).build());
+                        }
+                    } catch (NullPointerException e) {
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Player Invalid");
+                        alert.setHeaderText("Player Invalid");
+                        alert.setContentText("The player provided is invalid. Please check spelling.");
+
+                        alert.show();
+                    }
+
+                    JsonArray finishedArray = array.build();
+                    System.out.println(finishedArray.toString());
+                    PrintStream ps = new PrintStream(whitelistJson);
+                    ps.print(finishedArray.toString());
+
+                    whitelistPlayerInput.setText("");
+
+                    updateWhitelistArea();
+                }
+            }
+        } catch (FileNotFoundException e) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Player Invalid");
+            alert.setHeaderText("Player Invalid");
+            alert.setContentText("The player provided is invalid. Please check spelling.");
+
+            alert.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    void updateWhitelistArea() {
+        File file = new File("./server/whitelist.json");
+
+        try {
+            if (file.exists()) {
+                Gson gson = new Gson();
+
+                Reader reader = new BufferedReader(new FileReader(file));
+
+                WhitelistedPlayer[] whitelistedPlayersList = gson.fromJson(reader, WhitelistedPlayer[].class);
+
+                StringBuilder stringBuilder = new StringBuilder();
+
+                if (whitelistedPlayersList != null) {
+                    for (WhitelistedPlayer p : whitelistedPlayersList) {
+                        stringBuilder.append(p.getName()).append(System.getProperty("line.separator"));
+                    }
+                }
+
+                whitelistedPlayers.setText(stringBuilder.toString());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
