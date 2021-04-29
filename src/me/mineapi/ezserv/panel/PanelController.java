@@ -120,6 +120,8 @@ public class PanelController implements Initializable {
                 }
             }
         }, 0L, 1000L);
+
+        updateWhitelistArea();
     }
 
     public static void show() throws IOException {
@@ -440,43 +442,77 @@ public class PanelController implements Initializable {
 
     void whitelistPlayer() {
         try {
-            File whitelistJson = new File("./server/whitelist.json");
+            if (whitelistPlayerInput.getText() != null) {
+                File whitelistJson = new File("./server/whitelist.json");
 
-            Gson gson = new Gson();
+                Gson gson = new Gson();
 
-            Reader reader = new BufferedReader(new FileReader(whitelistJson));
+                Reader reader = new BufferedReader(new FileReader(whitelistJson));
 
-            WhitelistedPlayer[] whitelistPlayers = gson.fromJson(reader, WhitelistedPlayer[].class);
+                WhitelistedPlayer[] whitelistPlayers = gson.fromJson(reader, WhitelistedPlayer[].class);
 
-            FileWriter fw = new FileWriter(whitelistJson);
-            PrintWriter pw = new PrintWriter(whitelistJson);
-            pw.flush();
-            pw.close();
-            fw.close();
+                if (whitelistPlayers != null) {
+                    for (WhitelistedPlayer p : whitelistPlayers) {
+                        if (whitelistPlayerInput.getText().equals(p.getName())) {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setHeaderText("Player Invalid");
+                            alert.setTitle("Player Invalid");
+                            alert.setContentText("The player you attempted to whitelist is already whitelisted!");
+                            alert.show();
+                            return;
+                        }
+                    }
 
-            Map<String, String> config = new HashMap<String, String>();
-            config.put("javax.json.stream.JsonGenerator.prettyPrinting", "javax.json.stream.JsonGenerator.prettyPrinting");
-            JsonBuilderFactory factory = Json.createBuilderFactory(config);
-            JsonArrayBuilder array = factory.createArrayBuilder();
+                    FileWriter fw = new FileWriter(whitelistJson);
+                    PrintWriter pw = new PrintWriter(whitelistJson);
+                    pw.flush();
+                    pw.close();
+                    fw.close();
 
-            if (whitelistPlayers != null) {
-                for (WhitelistedPlayer whitelistPlayer : whitelistPlayers) {
-                    array.add(factory.createObjectBuilder().add("uuid", whitelistPlayer.getUuid()).add("name", whitelistPlayer.getName()).build());
+                    PrintStream ps1 = new PrintStream(whitelistJson);
+                    ps1.println("[]");
+
+                    Map<String, String> config = new HashMap<String, String>();
+                    config.put("javax.json.stream.JsonGenerator.prettyPrinting", "javax.json.stream.JsonGenerator.prettyPrinting");
+                    JsonBuilderFactory factory = Json.createBuilderFactory(config);
+                    JsonArrayBuilder array = factory.createArrayBuilder();
+
+                    if (whitelistPlayers != null) {
+                        for (WhitelistedPlayer whitelistPlayer : whitelistPlayers) {
+                            array.add(factory.createObjectBuilder().add("uuid", whitelistPlayer.getUuid()).add("name", whitelistPlayer.getName()).build());
+                        }
+                    }
+
+                    try {
+                        if (getUUIDfromAPI(whitelistPlayerInput.getText()) != null) {
+                            array.add(factory.createObjectBuilder().add("uuid", getUUIDfromAPI(whitelistPlayerInput.getText())).add("name", whitelistPlayerInput.getText()).build());
+                        }
+                    } catch (NullPointerException e) {
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Player Invalid");
+                        alert.setHeaderText("Player Invalid");
+                        alert.setContentText("The player provided is invalid. Please check spelling.");
+
+                        alert.show();
+                    }
+
+                    JsonArray finishedArray = array.build();
+                    System.out.println(finishedArray.toString());
+                    PrintStream ps = new PrintStream(whitelistJson);
+                    ps.print(finishedArray.toString());
+
+                    whitelistPlayerInput.setText("");
+
+                    updateWhitelistArea();
                 }
             }
+        } catch (FileNotFoundException e) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Player Invalid");
+            alert.setHeaderText("Player Invalid");
+            alert.setContentText("The player provided is invalid. Please check spelling.");
 
-            if (getUUIDfromAPI(whitelistPlayerInput.getText()) != null) {
-                array.add(factory.createObjectBuilder().add("uuid", getUUIDfromAPI(whitelistPlayerInput.getText())).add("name", whitelistPlayerInput.getText()).build());
-            }
-
-            JsonArray finishedArray = array.build();
-            System.out.println(finishedArray.toString());
-            PrintStream ps = new PrintStream(whitelistJson);
-            ps.print(finishedArray.toString());
-
-            whitelistPlayerInput.setText("");
-
-            updateWhitelistArea();
+            alert.show();
         } catch (Exception e) {
             e.printStackTrace();
         }
