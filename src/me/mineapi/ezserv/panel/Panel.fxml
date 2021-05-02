@@ -20,6 +20,7 @@
                         <Button fx:id="reload" layoutX="94.0" layoutY="14.0" mnemonicParsing="false" onAction="#onReload" text="Restart" />
                         <Button fx:id="start" layoutX="44.0" layoutY="14.0" mnemonicParsing="false" onAction="#onStart" text="Start" />
                         <Text fx:id="statusText" layoutX="419.0" layoutY="31.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Server Status:" wrappingWidth="159.13671875" />
+                        <Button fx:id="forceStop" layoutX="203.0" layoutY="14.0" mnemonicParsing="false" onAction="#onForceStop" text="Force Stop" />
                      </children>
                   </AnchorPane>
                </content>
@@ -28,7 +29,7 @@
               <content>
                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
-                        <Slider fx:id="memorySlider" layoutX="377.0" layoutY="61.0" max="65536.0" min="1024.0" />
+                        <Slider fx:id="memorySlider" layoutX="377.0" layoutY="61.0" majorTickUnit="100.0" max="65536.0" min="1024.0" />
                         <Text layoutX="397.0" layoutY="46.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Memory Allocation" />
                         <Text fx:id="memoryDisplay" layoutX="436.0" layoutY="95.0" strokeType="OUTSIDE" strokeWidth="0.0" text="0 MB" />
                         <TextArea fx:id="whitelistedPlayers" editable="false" layoutX="28.0" layoutY="33.0" prefHeight="79.0" prefWidth="256.0" />

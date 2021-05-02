@@ -1,4 +1,4 @@
-package me.mineapi.ezserv.downloader;
+package me.mineapi.ezserv.utils;
 
 public class VanillaVersion {
     String version;

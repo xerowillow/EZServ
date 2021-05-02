@@ -8,15 +8,17 @@ import me.mineapi.ezserv.panel.PanelController;
 
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.util.Timer;
 import java.util.TimerTask;
+import java.util.stream.Collectors;
 
 public class Console extends TimerTask {
     Process serverProcess;
     @FXML TextArea output;
     @FXML TextField input;
     @FXML Button submit;
-
-    StringBuilder consoleText = new StringBuilder();
 
     public Console(Process serverProcess, TextArea output, TextField input, Button submit) {
         this.serverProcess = serverProcess;
@@ -25,27 +27,22 @@ public class Console extends TimerTask {
         this.submit = submit;
     }
 
+    StringBuilder builder = new StringBuilder();
+
     @Override
     public void run() {
-        if (PanelController.serverStatus != PanelController.ServerStatus.RUNNING) {
-            this.cancel();
-        }
-
-        BufferedReader r = new BufferedReader(new InputStreamReader(serverProcess.getInputStream()));
-        String line = null;
         try {
-            line = r.readLine();
-        } catch (IOException exception) {
-            exception.printStackTrace();
+            Scanner sc = new Scanner(serverProcess.getInputStream());
+
+            while (sc.hasNextLine()) {
+                builder.append(sc.nextLine()).append(System.getProperty("line.separator"));
+            }
+        } catch (Exception e) {
+            return;
         }
-        if (line == null) { return; }
-        addConsoleLine(line);
-        System.out.println(line);
-        output.setText(consoleText.toString());
-        output.setScrollTop(Double.MAX_VALUE);
     }
 
-    private void addConsoleLine(String text) {
-        consoleText.append(text).append("\n");
+    public String getOutput() {
+        return builder.toString();
     }
 }

@@ -10,25 +10,20 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ProgressIndicator;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
-import me.mineapi.ezserv.Main;
 import me.mineapi.ezserv.UIControls.UIControls;
 import me.mineapi.ezserv.downloader.Downloader;
-import me.mineapi.ezserv.downloader.PaperVersion;
-import me.mineapi.ezserv.downloader.SpigotVersion;
-import me.mineapi.ezserv.downloader.VanillaVersion;
+import me.mineapi.ezserv.utils.PaperVersion;
+import me.mineapi.ezserv.utils.SpigotVersion;
+import me.mineapi.ezserv.utils.VanillaVersion;
 import me.mineapi.ezserv.panel.PanelController;
 
-import java.awt.print.Paper;
 import java.io.*;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -65,6 +60,14 @@ public class BinaryPickerController implements Initializable {
         primaryStage = new Stage();
         primaryStage.setTitle("EZServ Installer");
         primaryStage.setScene(new Scene(root, 600, 400));
+        primaryStage.setMaxWidth(600);
+        primaryStage.setMaxHeight(400);
+        primaryStage.setResizable(false);
+
+        primaryStage.setOnCloseRequest(event -> {
+            System.exit(1);
+        });
+
         primaryStage.show();
     }
 
