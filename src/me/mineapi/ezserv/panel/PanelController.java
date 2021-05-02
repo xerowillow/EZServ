@@ -1,7 +1,6 @@
 package me.mineapi.ezserv.panel;
 
 import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -18,9 +17,11 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import me.mineapi.ezserv.Main;
+import me.mineapi.ezserv.Launcher;
+import me.mineapi.ezserv.utils.APIPlayer;
 import me.mineapi.ezserv.utils.Console;
 import me.mineapi.ezserv.utils.ServerProperty;
+import me.mineapi.ezserv.utils.WhitelistPlayer;
 
 
 import javax.json.Json;
@@ -28,7 +29,7 @@ import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 import java.io.*;
-import java.net.MalformedURLException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.*;
 
@@ -36,6 +37,7 @@ public class PanelController implements Initializable {
     @FXML Button start;
     @FXML Button stop;
     @FXML Button reload;
+    @FXML Button forceStop;
     @FXML TextArea consoleArea;
     @FXML TextArea whitelistedPlayers;
     @FXML TextField consoleInput;
@@ -44,10 +46,12 @@ public class PanelController implements Initializable {
     @FXML Button saveProperties;
     @FXML Button whitelistPlayerSubmit;
     @FXML Text statusText;
+    @FXML Text memoryDisplay;
     @FXML TableView properties;
     @FXML TableColumn colProperty;
     @FXML TableColumn colValue;
     @FXML Tab serverPropertiesTab;
+    @FXML Slider memorySlider;
 
     public enum ServerStatus { RUNNING, STARTING, STOPPING, OFFLINE }
 
@@ -61,7 +65,11 @@ public class PanelController implements Initializable {
     HashMap<Integer, Long> memoryUsages = new HashMap<Integer, Long>();
     HashMap<String, String> propertiesList = new HashMap<String, String>();
 
+    int allocatedMemory = 1024;
+
     boolean propertiesExists = false;
+
+    String oldText = "";
 
     @Override
     public void initialize(URL location, ResourceBundle resources) { //Run this when the panel is initialized.
@@ -77,10 +85,12 @@ public class PanelController implements Initializable {
                     start.setDisable(false);
                     reload.setDisable(true);
                     stop.setDisable(true);
+                    forceStop.setDisable(true);
                 } else {
                     start.setDisable(true);
                     reload.setDisable(false);
                     stop.setDisable(false);
+                    forceStop.setDisable(false);
                 }
 
                 checkForProperties();
@@ -118,8 +128,31 @@ public class PanelController implements Initializable {
                 } else if (serverStatus == ServerStatus.STOPPING || serverStatus == ServerStatus.OFFLINE) {
                     timeSinceStart = 0;
                 }
+
+                Platform.runLater(() -> {
+                    allocatedMemory = (int) memorySlider.getValue();
+
+                    memorySlider.setValue(allocatedMemory);
+
+                    memoryDisplay.setText(allocatedMemory + "MB");
+                });
+
+                Platform.runLater(() -> {
+                    try {
+                        if (console != null) {
+                            if (!oldText.equals(console.getOutput())) {
+                                oldText = console.getOutput();
+                                consoleArea.setText(console.getOutput());
+                                consoleArea.setScrollTop(Double.MAX_VALUE);
+                            }
+                            oldText = console.getOutput();
+                        }
+                    } catch (Exception e) {
+                        return;
+                    }
+                });
             }
-        }, 0L, 1000L);
+        }, 0L, 1L);
 
         updateWhitelistArea();
     }
@@ -129,6 +162,14 @@ public class PanelController implements Initializable {
         Stage primaryStage = new Stage();
         primaryStage.setTitle("EZServ Panel");
         primaryStage.setScene(new Scene(root, 600, 400));
+        primaryStage.setMaxWidth(600);
+        primaryStage.setMaxHeight(400);
+        primaryStage.setResizable(false);
+
+        primaryStage.setOnCloseRequest(event -> {
+            System.exit(1);
+        });
+
         primaryStage.show();
     }
 
@@ -142,11 +183,35 @@ public class PanelController implements Initializable {
 
     public void onStop(ActionEvent event) {
         stopServer();
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (serverStatus == ServerStatus.OFFLINE) {
+                    consoleArea.setText("");
+                    this.cancel();
+                }
+            }
+        }, 1L, 1000L);
     }
 
-    public void onReload(ActionEvent event) {
-        if (!process.isAlive()) {
-            stopServer();
+    public void onForceStop(ActionEvent event) {
+        forceStopServer();
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (serverStatus == ServerStatus.OFFLINE) {
+                    consoleArea.setText("");
+                    this.cancel();
+                }
+            }
+        }, 1L, 1000L);
+    }
+
+    public void onReload(ActionEvent event) { //Force stops, then starts the server.
+        if (process.isAlive()) {
+            forceStopServer();
             try {
                 startServer();
             } catch (IOException e) {
@@ -178,12 +243,7 @@ public class PanelController implements Initializable {
     }
 
     void startServer() throws IOException {
-        File eula = new File(Main.loadServer().getAbsoluteFile().getParent() + "/eula.txt");
-        try {
-            getUUIDfromAPI("MineAPI");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        File eula = new File(Launcher.loadServer().getAbsoluteFile().getParent() + "/eula.txt");
         if (eula.createNewFile()) {
             PrintStream writer = new PrintStream(eula);
             writer.println("#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://account.mojang.com/documents/minecraft_eula).");
@@ -271,42 +331,53 @@ public class PanelController implements Initializable {
             }
         }
 
-        try {
             serverStatus = ServerStatus.STARTING;
-            ProcessBuilder pb = new ProcessBuilder("java", "-jar", Main.loadServer().getAbsolutePath(), "--nogui");
-            pb.directory(new File(Main.loadServer().getAbsoluteFile().getParent()));
+
+
+        try {
+            ProcessBuilder pb = new ProcessBuilder("java", "-Xmx" + allocatedMemory + "m", "-jar", Launcher.loadServer().getAbsolutePath(), "--nogui");
+            pb.directory(new File(Launcher.loadServer().getAbsoluteFile().getParent()));
             pb.redirectErrorStream(true);
 
+            pb.redirectErrorStream(true);
             process = pb.start(); //Start the process.
-
-            serverStatus = ServerStatus.RUNNING; //Set state to running for console.
-
-            console = new Console(process, consoleArea, consoleInput, consoleSubmit);
-
-            new Timer().schedule(console, 0L, 1000L); //Constantly update the console.
         } catch (IOException e) {
             displayError(e);
         }
+
+
+        serverStatus = ServerStatus.RUNNING; //Set state to running for console.
+
+        console = new Console(process, consoleArea, consoleInput, consoleSubmit);
+
+        new Timer().schedule(console, 0L, 1000L); //Constantly update the console.
     }
 
-    void stopServer() { //Destroys the server process.
+    void stopServer() { //Runs stop command.
         try {
             serverStatus = ServerStatus.STOPPING;
-            process.destroy();
-            serverStatus = ServerStatus.OFFLINE;
+            inputText("stop");
         } catch (Exception e) {
             displayError(e);
         }
     }
 
+    void forceStopServer() { //Destroys the server process.
+        serverStatus = ServerStatus.STOPPING;
+        process.destroy();
+    }
+
     void inputText(String text) {
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
         try {
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
             writer.write(text);
             writer.newLine();
             writer.flush();
         } catch (IOException e) {
             displayError(e);
+        } catch (Exception e) {
+            consoleInput.setText("");
+            System.out.println("User attempted to send command to offline server.");
         }
     }
 
@@ -374,7 +445,7 @@ public class PanelController implements Initializable {
     }
 
     File loadProperties() {
-        return new File(Main.loadServer().getAbsoluteFile().getParent() + "/server.properties");
+        return new File(Launcher.loadServer().getAbsoluteFile().getParent() + "/server.properties");
     }
 
     boolean hasChecked = false;
@@ -433,7 +504,7 @@ public class PanelController implements Initializable {
 
         Reader reader = new BufferedReader(new InputStreamReader(new URL("https://api.mojang.com/users/profiles/minecraft/" + userName).openStream()));
 
-        WhitelistPlayer player = gson.fromJson(reader, WhitelistPlayer.class);
+        APIPlayer player = gson.fromJson(reader, APIPlayer.class);
 
         System.out.println(player);
 
@@ -449,10 +520,10 @@ public class PanelController implements Initializable {
 
                 Reader reader = new BufferedReader(new FileReader(whitelistJson));
 
-                WhitelistedPlayer[] whitelistPlayers = gson.fromJson(reader, WhitelistedPlayer[].class);
+                WhitelistPlayer[] whitelistPlayers = gson.fromJson(reader, WhitelistPlayer[].class);
 
                 if (whitelistPlayers != null) {
-                    for (WhitelistedPlayer p : whitelistPlayers) {
+                    for (WhitelistPlayer p : whitelistPlayers) {
                         if (whitelistPlayerInput.getText().equals(p.getName())) {
                             Alert alert = new Alert(Alert.AlertType.INFORMATION);
                             alert.setHeaderText("Player Invalid");
@@ -478,7 +549,7 @@ public class PanelController implements Initializable {
                     JsonArrayBuilder array = factory.createArrayBuilder();
 
                     if (whitelistPlayers != null) {
-                        for (WhitelistedPlayer whitelistPlayer : whitelistPlayers) {
+                        for (WhitelistPlayer whitelistPlayer : whitelistPlayers) {
                             array.add(factory.createObjectBuilder().add("uuid", whitelistPlayer.getUuid()).add("name", whitelistPlayer.getName()).build());
                         }
                     }
@@ -527,12 +598,12 @@ public class PanelController implements Initializable {
 
                 Reader reader = new BufferedReader(new FileReader(file));
 
-                WhitelistedPlayer[] whitelistedPlayersList = gson.fromJson(reader, WhitelistedPlayer[].class);
+                WhitelistPlayer[] whitelistedPlayersList = gson.fromJson(reader, WhitelistPlayer[].class);
 
                 StringBuilder stringBuilder = new StringBuilder();
 
                 if (whitelistedPlayersList != null) {
-                    for (WhitelistedPlayer p : whitelistedPlayersList) {
+                    for (WhitelistPlayer p : whitelistedPlayersList) {
                         stringBuilder.append(p.getName()).append(System.getProperty("line.separator"));
                     }
                 }

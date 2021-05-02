@@ -1,19 +1,15 @@
 package me.mineapi.ezserv.downloader;
 
 import com.google.gson.Gson;
-import me.mineapi.ezserv.Main;
+import me.mineapi.ezserv.utils.PaperVersion;
+import me.mineapi.ezserv.utils.SpigotVersion;
+import me.mineapi.ezserv.utils.VanillaVersion;
 
 import javax.net.ssl.*;
 import java.io.*;
-import java.net.URI;
 import java.net.URL;
-import java.net.URLConnection;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -35,7 +31,7 @@ public class Downloader {
                     SpigotVersion[] spigotVersions = gson.fromJson(reader, SpigotVersion[].class);
 
                     for (SpigotVersion spigotVer : spigotVersions) {
-                        if (spigotVer.version.equals(version)) {
+                        if (spigotVer.getVersion().equals(version)) {
                     /*
                     Thanks Dash1e on StackOverflow!
                      */
@@ -116,7 +112,7 @@ public class Downloader {
                     VanillaVersion[] vanillaVersions = gson.fromJson(reader, VanillaVersion[].class);
 
                     for (VanillaVersion vanillaVer : vanillaVersions) {
-                        if (vanillaVer.version.equals(version)) {
+                        if (vanillaVer.getVersion().equals(version)) {
                     /*
                     Thanks Dash1e on StackOverflow!
                      */
@@ -198,7 +194,7 @@ public class Downloader {
                     PaperVersion[] paperVersions = gson.fromJson(reader, PaperVersion[].class);
 
                     for (PaperVersion paperVer : paperVersions) {
-                        if (paperVer.version.equals(version)) {
+                        if (paperVer.getVersion().equals(version)) {
                     /*
                     Thanks Dash1e on StackOverflow!
                      */

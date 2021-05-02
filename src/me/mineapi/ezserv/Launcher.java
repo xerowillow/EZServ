@@ -8,7 +8,7 @@ import javafx.stage.Stage;
 
 import java.io.File;
 
-public class Main extends Application {
+public class Launcher extends Application {
     private static FXMLLoader loader;
     @Override
     public void start(Stage primaryStage) throws Exception {

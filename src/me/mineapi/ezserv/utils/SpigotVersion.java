@@ -1,9 +1,9 @@
-package me.mineapi.ezserv.downloader;
+package me.mineapi.ezserv.utils;
 
-public class PaperVersion {
+public class SpigotVersion {
     String version;
     String url;
-    public PaperVersion(String version, String url) {
+    public SpigotVersion(String version, String url) {
         this.version = version;
         this.url = url;
     }

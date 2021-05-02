@@ -1,11 +1,11 @@
-package me.mineapi.ezserv.panel;
+package me.mineapi.ezserv.utils;
 
-public class WhitelistedPlayer {
+public class WhitelistPlayer {
 
     private String name;
     private String uuid;
 
-    public WhitelistedPlayer(String uuid, String name) {
+    public WhitelistPlayer(String uuid, String name) {
         this.name = name;
         this.uuid = uuid;
     }
