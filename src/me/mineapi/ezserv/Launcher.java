@@ -1,19 +1,36 @@
 package me.mineapi.ezserv;
 
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.stage.Stage;
+import me.mineapi.ezserv.installer.BinaryPickerController;
+import me.mineapi.ezserv.panel.PanelController;
 
 import java.io.File;
+import java.io.IOException;
 
 public class Launcher extends Application {
-    private static FXMLLoader loader;
     @Override
     public void start(Stage primaryStage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("load/Load.fxml"));
-        loader = new FXMLLoader(getClass().getResource("load/Load.fxml"));
+        File dir = new File(Launcher.loadServer().getParent());
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+
+        if (Launcher.loadServer().getAbsoluteFile().exists()) {
+            //Redirect user to the panel.
+            try {
+                PanelController.show();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            //Redirect the user to the installer.
+            try {
+                BinaryPickerController.show();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 
@@ -24,6 +41,4 @@ public class Launcher extends Application {
     public static File loadServer() {
         return new File("./server/server.jar");
     }
-
-    public static FXMLLoader getLoader() { return loader; }
 }
