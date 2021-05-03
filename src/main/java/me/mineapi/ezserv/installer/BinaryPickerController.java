@@ -15,7 +15,6 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
-import me.mineapi.ezserv.UIControls.UIControls;
 import me.mineapi.ezserv.downloader.Downloader;
 import me.mineapi.ezserv.utils.PaperVersion;
 import me.mineapi.ezserv.utils.SpigotVersion;
@@ -37,9 +36,9 @@ public class BinaryPickerController implements Initializable {
 
     static Stage primaryStage;
 
-    Image spigotImage = new Image(UIControls.class.getResourceAsStream("spigot.png"));
-    Image vanillaImage = new Image(UIControls.class.getResourceAsStream("vanilla.png"));
-    Image paperImage = new Image(UIControls.class.getResourceAsStream("paper.png"));
+    Image spigotImage = new Image(BinaryPickerController.class.getClassLoader().getResourceAsStream("spigot.png"));
+    Image vanillaImage = new Image(BinaryPickerController.class.getClassLoader().getResourceAsStream("vanilla.png"));
+    Image paperImage = new Image(BinaryPickerController.class.getClassLoader().getResourceAsStream("paper.png"));
 
     Button pickedButton;
 
@@ -56,7 +55,7 @@ public class BinaryPickerController implements Initializable {
     }
 
     public static void show() throws IOException {
-        Parent root = FXMLLoader.load(BinaryPickerController.class.getResource("BinaryPicker.fxml"));
+        Parent root = FXMLLoader.load(BinaryPickerController.class.getClassLoader().getResource("BinaryPicker.fxml"));
         primaryStage = new Stage();
         primaryStage.setTitle("EZServ Installer");
         primaryStage.setScene(new Scene(root, 600, 400));

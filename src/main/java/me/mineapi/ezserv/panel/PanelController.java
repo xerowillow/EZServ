@@ -29,7 +29,6 @@ import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.*;
 
@@ -158,7 +157,7 @@ public class PanelController implements Initializable {
     }
 
     public static void show() throws IOException {
-        Parent root = FXMLLoader.load(PanelController.class.getResource("Panel.fxml"));
+        Parent root = FXMLLoader.load(PanelController.class.getClassLoader().getResource("Panel.fxml"));
         Stage primaryStage = new Stage();
         primaryStage.setTitle("EZServ Panel");
         primaryStage.setScene(new Scene(root, 600, 400));
