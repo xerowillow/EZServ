@@ -25,7 +25,7 @@ jobs:
           java-version: '8.0.282'
           architecture: x64
       - name: Build with Maven
-        run: mvn -F "/home/runner/work/EZServ/pom.xml" clean package
+        run: mvn -f "/home/runner/work/EZServ/pom.xml" clean package
       - uses: actions/upload-artifact@v2
         with:
           name: Package
